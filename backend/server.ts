@@ -2,12 +2,15 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import csvToJson from "convert-csv-to-json";
+import { isJsxExpression } from "typescript";
 
 const app = express();
 const port = process.env.PORT ?? 3000;
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+
 
 app.use(cors());
 
@@ -20,12 +23,19 @@ app.post('/api/files', upload.single('file'), async (req, res) => {
     if(file.mimetype == 'text/csv'){
         return res.status(500).json({message: 'File must be CSV'})
     }
-    try{
-        const result = Buffer.from(file.buffer).toString('utf-8')
-        console.log(result)
-    }catch(err){
 
+    let userData: Array<Record<string, string>> = [];
+    try{
+        const rawCsv = Buffer.from(file.buffer).toString('utf-8')
+        console.log(rawCsv)
+        const json = csvToJson.csvStringToJson(rawCsv)
+        
+    }catch(err){
+        return res.status(500).json({message: 'Error parsing the file'})
     }
+    userData = json;
+
+    return res.status(200).json({data: json, message: 'El archivo se cargó correctamente'});
 })
 
 app.get('/api/users', async (req, res) => {
